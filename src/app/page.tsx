@@ -1,5 +1,5 @@
-import { PapasApp } from "~/components/papas-app";
+import { HomePage } from "~/components/home-page";
 
 export default function Home() {
-  return <PapasApp />;
+  return <HomePage />;
 }
