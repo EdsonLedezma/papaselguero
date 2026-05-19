@@ -1,0 +1,380 @@
+"use client";
+
+import { useMemo, useRef, useState } from "react";
+import { Canvas, type ThreeEvent, useFrame } from "@react-three/fiber";
+import {
+  ContactShadows,
+  Environment,
+  Float,
+  Html,
+  OrbitControls,
+  PerspectiveCamera,
+} from "@react-three/drei";
+import { RotateCcw } from "lucide-react";
+import * as THREE from "three";
+
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
+import { formatCurrency, getIngredient, type Ingredient } from "~/lib/menu";
+import { selectableIngredients, useOrderStore } from "~/lib/order-store";
+
+type VectorTuple = [number, number, number];
+
+const shelfPositions: VectorTuple[] = [
+  [-4.2, 1.1, -2.2],
+  [-3.1, 1.2, -3.1],
+  [-1.7, 1.25, -3.5],
+  [-0.25, 1.1, -3.7],
+  [1.25, 1.25, -3.55],
+  [2.65, 1.1, -3.15],
+  [4, 1.2, -2.35],
+  [-4.45, 1.05, -0.65],
+  [4.45, 1.05, -0.65],
+  [-4.1, 1.2, 0.95],
+  [4.1, 1.2, 0.95],
+  [-3.05, 1.1, 2.45],
+  [-1.55, 1.2, 3.05],
+  [0, 1.1, 3.2],
+  [1.55, 1.2, 3.05],
+  [3.05, 1.1, 2.45],
+];
+
+const categoryLabels = {
+  base: "Base",
+  sauce: "Salsa",
+  crunch: "Crujiente",
+  protein: "Proteina",
+  fresh: "Fresco",
+  candy: "Dulce",
+  drink: "Bebida",
+};
+
+function ingredientTarget(index: number): VectorTuple {
+  const ring = Math.floor(index / 10);
+  const angle = index * 1.618;
+  const radius = 0.2 + (index % 10) * 0.055 + ring * 0.08;
+
+  return [
+    Math.cos(angle) * radius,
+    0.45 + index * 0.018,
+    Math.sin(angle) * radius,
+  ];
+}
+
+function IngredientGeometry({ ingredient }: { ingredient: Ingredient }) {
+  switch (ingredient.shape) {
+    case "cube":
+      return <boxGeometry args={[0.42, 0.22, 0.34]} />;
+    case "slice":
+      return <cylinderGeometry args={[0.28, 0.28, 0.08, 32]} />;
+    case "stick":
+      return <capsuleGeometry args={[0.08, 0.55, 8, 16]} />;
+    case "ring":
+      return <torusGeometry args={[0.23, 0.06, 12, 32]} />;
+    case "bottle":
+      return <capsuleGeometry args={[0.12, 0.55, 10, 18]} />;
+    case "shrimp":
+      return <torusGeometry args={[0.24, 0.08, 16, 40, Math.PI * 1.35]} />;
+    default:
+      return <sphereGeometry args={[0.24, 24, 24]} />;
+  }
+}
+
+function IngredientModel({
+  ingredient,
+  scale = 1,
+  emissive = false,
+}: {
+  ingredient: Ingredient;
+  scale?: number;
+  emissive?: boolean;
+}) {
+  return (
+    <group scale={scale}>
+      <mesh
+        castShadow
+        receiveShadow
+        rotation={[ingredient.shape === "slice" ? Math.PI / 2 : 0, 0, 0]}
+      >
+        <IngredientGeometry ingredient={ingredient} />
+        <meshStandardMaterial
+          color={ingredient.color}
+          emissive={emissive ? ingredient.accent : "#000000"}
+          emissiveIntensity={emissive ? 0.14 : 0}
+          metalness={0.08}
+          roughness={0.56}
+        />
+      </mesh>
+      <mesh position={[0.08, 0.08, 0.08]} scale={0.55}>
+        <IngredientGeometry ingredient={ingredient} />
+        <meshStandardMaterial color={ingredient.accent} roughness={0.72} />
+      </mesh>
+    </group>
+  );
+}
+
+function Tray() {
+  return (
+    <group>
+      <mesh receiveShadow position={[0, 0.16, 0]}>
+        <cylinderGeometry args={[1.72, 1.96, 0.32, 72]} />
+        <meshStandardMaterial color="#e0b46c" metalness={0.12} roughness={0.55} />
+      </mesh>
+      <mesh receiveShadow position={[0, 0.38, 0]}>
+        <torusGeometry args={[1.72, 0.13, 18, 96]} />
+        <meshStandardMaterial color="#f4c67a" metalness={0.18} roughness={0.5} />
+      </mesh>
+      <mesh receiveShadow position={[0, 0.42, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[1.55, 72]} />
+        <meshStandardMaterial color="#2f2521" roughness={0.82} />
+      </mesh>
+      <Html center distanceFactor={7} position={[0, 0.9, 0]} transform>
+        <div className="rounded-full border border-amber-200/40 bg-black/65 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-100 shadow-lg backdrop-blur">
+          Charola
+        </div>
+      </Html>
+    </group>
+  );
+}
+
+function PotatoBase() {
+  const potato = getIngredient("papas");
+  const basePieces = Array.from({ length: 26 }, (_, index) => {
+    const target = ingredientTarget(index);
+
+    return {
+      key: `base-${index}`,
+      position: [target[0] * 1.9, 0.48 + (index % 6) * 0.035, target[2] * 1.9] as VectorTuple,
+      rotation: [index * 0.4, index * 0.2, index * 0.3] as VectorTuple,
+      scale: 0.72 + (index % 4) * 0.06,
+    };
+  });
+
+  return (
+    <group>
+      {basePieces.map((piece) => (
+        <group
+          key={piece.key}
+          position={piece.position}
+          rotation={piece.rotation}
+          scale={piece.scale}
+        >
+          <IngredientModel ingredient={potato} scale={0.72} />
+        </group>
+      ))}
+    </group>
+  );
+}
+
+function DroppedIngredientMesh({
+  ingredient,
+  index,
+}: {
+  ingredient: Ingredient;
+  index: number;
+}) {
+  const groupRef = useRef<THREE.Group>(null);
+  const startTimeRef = useRef<number | null>(null);
+  const target = useMemo(() => ingredientTarget(index), [index]);
+  const start = useMemo<VectorTuple>(
+    () => [target[0] * 3.8, 3.8 + (index % 4) * 0.35, target[2] * 3.8],
+    [index, target],
+  );
+
+  useFrame((state) => {
+    if (!groupRef.current) return;
+
+    startTimeRef.current ??= state.clock.elapsedTime;
+    const elapsed = state.clock.elapsedTime;
+    const progress = Math.min(
+      1,
+      Math.max(0, (elapsed - startTimeRef.current - index * 0.018) / 0.82),
+    );
+    const eased = 1 - Math.pow(1 - progress, 3);
+
+    groupRef.current.position.set(
+      THREE.MathUtils.lerp(start[0], target[0], eased),
+      THREE.MathUtils.lerp(start[1], target[1], eased) + Math.sin(progress * Math.PI) * 0.18,
+      THREE.MathUtils.lerp(start[2], target[2], eased),
+    );
+    groupRef.current.rotation.set(
+      elapsed * 0.45 + index,
+      elapsed * 0.28 + index * 0.4,
+      elapsed * 0.34,
+    );
+  });
+
+  return (
+    <group ref={groupRef}>
+      <IngredientModel emissive ingredient={ingredient} scale={0.82} />
+    </group>
+  );
+}
+
+function IngredientToken({
+  ingredient,
+  position,
+}: {
+  ingredient: Ingredient;
+  position: VectorTuple;
+}) {
+  const addIngredient = useOrderStore((state) => state.addIngredient);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragPosition, setDragPosition] = useState<VectorTuple>(position);
+
+  const handlePointerDown = (event: ThreeEvent<PointerEvent>) => {
+    event.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handlePointerMove = (event: ThreeEvent<PointerEvent>) => {
+    if (!isDragging) return;
+
+    event.stopPropagation();
+    setDragPosition([event.point.x, 1.55, event.point.z]);
+  };
+
+  const handlePointerUp = (event: ThreeEvent<PointerEvent>) => {
+    event.stopPropagation();
+    setIsDragging(false);
+    setDragPosition(position);
+    addIngredient(ingredient.id);
+  };
+
+  return (
+    <group
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      position={isDragging ? dragPosition : position}
+      scale={isDragging ? 1.18 : 1}
+    >
+      <Float floatIntensity={0.18} rotationIntensity={0.18} speed={2}>
+        <IngredientModel emissive={isDragging} ingredient={ingredient} />
+      </Float>
+      <Html center distanceFactor={6} position={[0, -0.58, 0]} transform>
+        <div className="pointer-events-none min-w-20 rounded-full border border-white/15 bg-black/75 px-2 py-1 text-center text-[10px] font-medium text-white shadow-lg backdrop-blur">
+          {ingredient.shortName}
+        </div>
+      </Html>
+    </group>
+  );
+}
+
+function BuilderScene() {
+  const droppedIngredients = useOrderStore((state) => state.droppedIngredients);
+  const visibleIngredients = selectableIngredients.slice(0, shelfPositions.length);
+
+  return (
+    <>
+      <PerspectiveCamera makeDefault fov={45} position={[0, 5.4, 7.2]} />
+      <ambientLight intensity={0.8} />
+      <directionalLight castShadow intensity={2.4} position={[3.5, 6, 4]} />
+      <spotLight angle={0.45} intensity={1.5} penumbra={0.5} position={[-4, 6, -3]} />
+      <group position={[0, -0.45, 0]}>
+        <Tray />
+        <PotatoBase />
+        {droppedIngredients
+          .filter((item) => item.id !== "papas")
+          .map((item, index) => (
+            <DroppedIngredientMesh
+              key={item.instanceId}
+              index={index}
+              ingredient={getIngredient(item.id)}
+            />
+          ))}
+      </group>
+      {visibleIngredients.map((ingredient, index) => (
+        <IngredientToken
+          key={ingredient.id}
+          ingredient={ingredient}
+          position={shelfPositions[index]!}
+        />
+      ))}
+      <mesh receiveShadow position={[0, -0.68, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[12, 10]} />
+        <meshStandardMaterial color="#17100d" roughness={0.86} />
+      </mesh>
+      <ContactShadows blur={2.4} color="#000000" far={8} opacity={0.45} resolution={512} />
+      <Environment preset="warehouse" />
+      <OrbitControls
+        enablePan={false}
+        enableZoom={false}
+        maxPolarAngle={Math.PI / 2.15}
+        minPolarAngle={Math.PI / 4}
+      />
+    </>
+  );
+}
+
+export function PotatoBuilder3D() {
+  const clearIngredients = useOrderStore((state) => state.clearIngredients);
+  const droppedIngredients = useOrderStore((state) => state.droppedIngredients);
+  const uniqueCount = new Set(droppedIngredients.map((item) => item.id)).size;
+
+  return (
+    <section className="relative min-h-[520px] overflow-hidden border-y border-border bg-[#211611] sm:min-h-[620px] lg:min-h-[720px]">
+      <div className="absolute left-3 top-3 z-10 flex max-w-[calc(100%-1.5rem)] flex-wrap items-center gap-2">
+        <Badge className="bg-amber-300 text-stone-950 hover:bg-amber-300">
+          {droppedIngredients.length} ingredientes
+        </Badge>
+        <Badge className="border-white/20 bg-black/35 text-white" variant="outline">
+          {uniqueCount} unicos
+        </Badge>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              aria-label="Vaciar charola"
+              className="bg-black/50 text-white hover:bg-black/70"
+              onClick={clearIngredients}
+              size="icon-sm"
+              variant="secondary"
+            >
+              <RotateCcw className="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Vaciar charola</TooltipContent>
+        </Tooltip>
+      </div>
+
+      <div className="absolute bottom-3 left-3 right-3 z-10 rounded-lg border border-white/10 bg-black/55 p-3 text-xs text-white shadow-2xl backdrop-blur md:left-auto md:max-w-sm">
+        <p className="font-semibold text-amber-100">Toca o arrastra ingredientes.</p>
+        <p className="mt-1 text-white/70">
+          Al soltar, el ingrediente cae a la charola. La camara gira suave para dar profundidad.
+        </p>
+      </div>
+
+      <Canvas dpr={[1, 1.7]} gl={{ antialias: true, alpha: false }} shadows>
+        <BuilderScene />
+      </Canvas>
+
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/55 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/55 to-transparent" />
+
+      <div className="absolute right-3 top-3 z-10 hidden rounded-lg border border-white/10 bg-black/45 p-3 text-xs text-white backdrop-blur lg:block">
+        <div className="mb-2 font-semibold text-amber-100">Categorias</div>
+        <div className="grid grid-cols-2 gap-1.5">
+          {Object.entries(categoryLabels)
+            .filter(([key]) => key !== "drink")
+            .map(([key, label]) => {
+              const count = selectableIngredients.filter((item) => item.category === key).length;
+
+              return (
+                <span key={key} className="rounded-md bg-white/10 px-2 py-1 text-white/80">
+                  {label}: {count}
+                </span>
+              );
+            })}
+        </div>
+        <div className="mt-2 text-white/55">
+          Extras desde {formatCurrency(5)} hasta {formatCurrency(50)}
+        </div>
+      </div>
+    </section>
+  );
+}
