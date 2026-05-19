@@ -42,6 +42,16 @@ const shelfPositions: VectorTuple[] = [
   [0, 1.1, 3.2],
   [1.55, 1.2, 3.05],
   [3.05, 1.1, 2.45],
+  [-4.65, 1.3, 1.95],
+  [4.65, 1.3, 1.95],
+  [-4.75, 1.32, -1.65],
+  [4.75, 1.32, -1.65],
+  [-3.95, 1.42, 3.45],
+  [-2.3, 1.48, 4.05],
+  [-0.75, 1.42, 4.28],
+  [0.75, 1.42, 4.28],
+  [2.3, 1.48, 4.05],
+  [3.95, 1.42, 3.45],
 ];
 
 const categoryLabels = {
@@ -94,6 +104,10 @@ function IngredientModel({
   scale?: number;
   emissive?: boolean;
 }) {
+  const isBottle = ingredient.shape === "bottle";
+  const isPotato = ingredient.id === "papas";
+  const isSauce = ingredient.category === "sauce";
+
   return (
     <group scale={scale}>
       <mesh
@@ -106,14 +120,42 @@ function IngredientModel({
           color={ingredient.color}
           emissive={emissive ? ingredient.accent : "#000000"}
           emissiveIntensity={emissive ? 0.14 : 0}
-          metalness={0.08}
-          roughness={0.56}
+          metalness={isSauce ? 0.03 : 0.08}
+          roughness={isSauce ? 0.28 : 0.56}
         />
       </mesh>
       <mesh position={[0.08, 0.08, 0.08]} scale={0.55}>
         <IngredientGeometry ingredient={ingredient} />
-        <meshStandardMaterial color={ingredient.accent} roughness={0.72} />
+        <meshStandardMaterial color={ingredient.accent} roughness={isSauce ? 0.22 : 0.72} />
       </mesh>
+      {isPotato
+        ? Array.from({ length: 5 }, (_, index) => (
+            <mesh
+              key={index}
+              position={[
+                Math.sin(index * 1.9) * 0.16,
+                Math.cos(index * 2.2) * 0.08,
+                Math.sin(index * 0.8) * 0.18,
+              ]}
+              scale={0.18}
+            >
+              <sphereGeometry args={[0.06, 8, 8]} />
+              <meshStandardMaterial color="#9a5b22" roughness={0.9} />
+            </mesh>
+          ))
+        : null}
+      {isBottle ? (
+        <>
+          <mesh position={[0, 0.42, 0]}>
+            <cylinderGeometry args={[0.1, 0.1, 0.12, 20]} />
+            <meshStandardMaterial color="#1f1712" roughness={0.4} />
+          </mesh>
+          <mesh position={[0, 0.05, 0.13]} scale={[0.85, 0.55, 0.12]}>
+            <boxGeometry args={[0.24, 0.22, 0.05]} />
+            <meshStandardMaterial color={ingredient.accent} roughness={0.35} />
+          </mesh>
+        </>
+      ) : null}
     </group>
   );
 }
@@ -123,15 +165,19 @@ function Tray() {
     <group>
       <mesh receiveShadow position={[0, 0.16, 0]}>
         <cylinderGeometry args={[1.72, 1.96, 0.32, 72]} />
-        <meshStandardMaterial color="#e0b46c" metalness={0.12} roughness={0.55} />
+        <meshStandardMaterial color="#11100f" metalness={0.35} roughness={0.32} />
       </mesh>
       <mesh receiveShadow position={[0, 0.38, 0]}>
         <torusGeometry args={[1.72, 0.13, 18, 96]} />
-        <meshStandardMaterial color="#f4c67a" metalness={0.18} roughness={0.5} />
+        <meshStandardMaterial color="#272321" metalness={0.5} roughness={0.26} />
       </mesh>
       <mesh receiveShadow position={[0, 0.42, 0]} rotation={[Math.PI / 2, 0, 0]}>
         <circleGeometry args={[1.55, 72]} />
-        <meshStandardMaterial color="#2f2521" roughness={0.82} />
+        <meshStandardMaterial color="#0c0b0a" metalness={0.25} roughness={0.35} />
+      </mesh>
+      <mesh position={[0.25, 0.45, 0.15]} rotation={[Math.PI / 2, 0, -0.3]}>
+        <ringGeometry args={[0.35, 1.3, 72]} />
+        <meshStandardMaterial transparent color="#ffffff" opacity={0.055} roughness={0.1} />
       </mesh>
       <Html center distanceFactor={7} position={[0, 0.9, 0]} transform>
         <div className="rounded-full border border-amber-200/40 bg-black/65 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-100 shadow-lg backdrop-blur">
@@ -166,6 +212,35 @@ function PotatoBase() {
         >
           <IngredientModel ingredient={potato} scale={0.72} />
         </group>
+      ))}
+    </group>
+  );
+}
+
+function SaucePools() {
+  return (
+    <group>
+      {[
+        {
+          color: "#f7c52d",
+          position: [-0.35, 0.64, 0.2] as VectorTuple,
+          scale: [0.7, 0.08, 0.38] as VectorTuple,
+        },
+        {
+          color: "#d83b1f",
+          position: [0.42, 0.69, -0.1] as VectorTuple,
+          scale: [0.52, 0.07, 0.3] as VectorTuple,
+        },
+        {
+          color: "#fff2cf",
+          position: [0.05, 0.72, 0.45] as VectorTuple,
+          scale: [0.42, 0.06, 0.22] as VectorTuple,
+        },
+      ].map((pool, index) => (
+        <mesh key={index} position={pool.position} rotation={[Math.PI / 2, 0, index * 0.6]} scale={pool.scale}>
+          <sphereGeometry args={[1, 32, 16]} />
+          <meshStandardMaterial color={pool.color} metalness={0.02} roughness={0.18} />
+        </mesh>
       ))}
     </group>
   );
@@ -279,6 +354,7 @@ function BuilderScene() {
       <group position={[0, -0.45, 0]}>
         <Tray />
         <PotatoBase />
+        <SaucePools />
         {droppedIngredients
           .filter((item) => item.id !== "papas")
           .map((item, index) => (
