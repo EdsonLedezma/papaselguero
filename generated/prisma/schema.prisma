@@ -15,6 +15,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum OrderStatus {
+  DRAFT
+  RECEIVED
+  IN_PREP
+  READY
+  DELIVERED
+  CANCELLED
+}
+
 model Post {
   id        Int      @id @default(autoincrement())
   name      String
@@ -25,6 +34,63 @@ model Post {
   createdById String
 
   @@index([name])
+}
+
+model Order {
+  id            String       @id @default(cuid())
+  customerName  String?
+  customerPhone String?
+  presetId      String
+  presetName    String
+  size          String
+  flavorId      String
+  flavorName    String
+  notes         String       @default("")
+  totalCents    Int
+  etaMinutes    Int
+  status        OrderStatus  @default(RECEIVED)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  items         OrderItem[]
+  drinks        OrderDrink[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id           String @id @default(cuid())
+  orderId      String
+  ingredientId String
+  name         String
+  quantity     Int    @default(1)
+  priceCents   Int
+  order        Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+model OrderDrink {
+  id         String @id @default(cuid())
+  orderId    String
+  drinkId    String
+  name       String
+  quantity   Int    @default(1)
+  priceCents Int
+  order      Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+model TimingProfile {
+  id                   String   @id @default(cuid())
+  name                 String   @unique
+  baseSeconds          Int      @default(240)
+  perIngredientSeconds Int      @default(18)
+  queueSeconds         Int      @default(150)
+  active               Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 }
 
 // Necessary for Next auth
