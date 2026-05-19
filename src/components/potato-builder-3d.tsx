@@ -4,11 +4,11 @@ import { useMemo, useRef, useState } from "react";
 import { Canvas, type ThreeEvent, useFrame } from "@react-three/fiber";
 import {
   ContactShadows,
-  Environment,
   Float,
   Html,
   OrbitControls,
   PerspectiveCamera,
+  RoundedBox,
 } from "@react-three/drei";
 import { RotateCcw } from "lucide-react";
 import * as THREE from "three";
@@ -95,6 +95,207 @@ function IngredientGeometry({ ingredient }: { ingredient: Ingredient }) {
   }
 }
 
+function PotatoPiece({
+  position,
+  rotation,
+  scale,
+}: {
+  position: VectorTuple;
+  rotation: VectorTuple;
+  scale: VectorTuple;
+}) {
+  return (
+    <group position={position} rotation={rotation} scale={scale}>
+      <mesh castShadow receiveShadow>
+        <sphereGeometry args={[0.24, 18, 12]} />
+        <meshStandardMaterial color="#d8892f" roughness={0.82} />
+      </mesh>
+      <mesh position={[0.04, 0.05, 0.16]} scale={[0.35, 0.18, 0.22]}>
+        <sphereGeometry args={[0.12, 10, 8]} />
+        <meshStandardMaterial color="#f0bc59" roughness={0.7} />
+      </mesh>
+      {Array.from({ length: 4 }, (_, index) => (
+        <mesh
+          key={index}
+          position={[
+            Math.sin(index * 2.1) * 0.16,
+            Math.cos(index * 1.6) * 0.08,
+            Math.sin(index * 0.9) * 0.16,
+          ]}
+          scale={[0.07, 0.025, 0.045]}
+        >
+          <sphereGeometry args={[1, 8, 6]} />
+          <meshStandardMaterial color="#81501f" roughness={0.9} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function TortillaChip({
+  position,
+  rotation,
+  scale = 1,
+}: {
+  position: VectorTuple;
+  rotation: VectorTuple;
+  scale?: number;
+}) {
+  return (
+    <mesh
+      castShadow
+      receiveShadow
+      position={position}
+      rotation={rotation}
+      scale={scale}
+    >
+      <cylinderGeometry args={[0.22, 0.26, 0.035, 3]} />
+      <meshStandardMaterial color="#e0a43a" roughness={0.78} />
+    </mesh>
+  );
+}
+
+function CarneStrip({
+  position,
+  rotation,
+  scale = 1,
+}: {
+  position: VectorTuple;
+  rotation: VectorTuple;
+  scale?: number;
+}) {
+  return (
+    <group position={position} rotation={rotation} scale={scale}>
+      <RoundedBox
+        args={[0.72, 0.12, 0.18]}
+        radius={0.055}
+        smoothness={4}
+        castShadow
+        receiveShadow
+      >
+        <meshStandardMaterial color="#5b2b1f" roughness={0.68} />
+      </RoundedBox>
+      <mesh position={[0.1, 0.07, 0.04]} scale={[0.42, 0.035, 0.08]}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color="#9a5433" roughness={0.62} />
+      </mesh>
+    </group>
+  );
+}
+
+function ShrimpPiece({
+  position,
+  rotation,
+  scale = 1,
+}: {
+  position: VectorTuple;
+  rotation: VectorTuple;
+  scale?: number;
+}) {
+  return (
+    <group position={position} rotation={rotation} scale={scale}>
+      <mesh castShadow receiveShadow>
+        <torusGeometry args={[0.18, 0.055, 12, 28, Math.PI * 1.35]} />
+        <meshStandardMaterial color="#f08a62" roughness={0.5} />
+      </mesh>
+      <mesh position={[0.13, 0.02, 0.02]} scale={[0.35, 0.2, 0.25]}>
+        <sphereGeometry args={[0.16, 14, 10]} />
+        <meshStandardMaterial color="#ffd0a8" roughness={0.45} />
+      </mesh>
+    </group>
+  );
+}
+
+function LimeWedge({
+  position,
+  rotation,
+  scale = 1,
+}: {
+  position: VectorTuple;
+  rotation: VectorTuple;
+  scale?: number;
+}) {
+  return (
+    <group position={position} rotation={rotation} scale={scale}>
+      <mesh castShadow receiveShadow>
+        <cylinderGeometry args={[0.18, 0.2, 0.08, 24, 1, false, 0, Math.PI]} />
+        <meshStandardMaterial color="#b9d43f" roughness={0.5} />
+      </mesh>
+      <mesh
+        position={[0, 0.045, 0]}
+        rotation={[Math.PI / 2, 0, 0]}
+        scale={[0.75, 0.35, 1]}
+      >
+        <circleGeometry args={[0.18, 24, 0, Math.PI]} />
+        <meshStandardMaterial color="#f4ff98" roughness={0.55} />
+      </mesh>
+    </group>
+  );
+}
+
+function PicoBits({
+  position = [0, 0, 0] as VectorTuple,
+}: {
+  position?: VectorTuple;
+}) {
+  return (
+    <group position={position}>
+      {Array.from({ length: 18 }, (_, index) => (
+        <mesh
+          key={index}
+          castShadow
+          position={[
+            Math.cos(index * 1.7) * (0.15 + (index % 4) * 0.045),
+            0.03 + (index % 3) * 0.035,
+            Math.sin(index * 1.7) * (0.12 + (index % 5) * 0.035),
+          ]}
+          rotation={[index * 0.3, index * 0.5, index * 0.2]}
+          scale={[0.07, 0.045, 0.055]}
+        >
+          <boxGeometry args={[1, 1, 1]} />
+          <meshStandardMaterial
+            color={
+              index % 3 === 0
+                ? "#d93828"
+                : index % 3 === 1
+                  ? "#f3efe3"
+                  : "#4d9f4a"
+            }
+            roughness={0.75}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function CheeseStrands() {
+  return (
+    <group>
+      {Array.from({ length: 14 }, (_, index) => (
+        <mesh
+          key={index}
+          castShadow
+          position={[
+            Math.cos(index * 0.9) * 0.7,
+            0.7 + (index % 3) * 0.04,
+            Math.sin(index * 0.9) * 0.48,
+          ]}
+          rotation={[0.2, index * 0.5, 0.35]}
+          scale={[0.42 + (index % 3) * 0.08, 0.035, 0.055]}
+        >
+          <capsuleGeometry args={[0.08, 0.42, 6, 12]} />
+          <meshStandardMaterial
+            color="#ffd23f"
+            roughness={0.24}
+            metalness={0.03}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 function IngredientModel({
   ingredient,
   scale = 1,
@@ -107,6 +308,43 @@ function IngredientModel({
   const isBottle = ingredient.shape === "bottle";
   const isPotato = ingredient.id === "papas";
   const isSauce = ingredient.category === "sauce";
+
+  if (ingredient.id === "carne-seca") {
+    return (
+      <group scale={scale}>
+        <CarneStrip position={[0, 0, 0]} rotation={[0.2, 0.2, -0.2]} />
+        <CarneStrip
+          position={[0.04, 0.14, 0.12]}
+          rotation={[-0.15, -0.7, 0.35]}
+          scale={0.8}
+        />
+      </group>
+    );
+  }
+
+  if (ingredient.id === "camaron") {
+    return (
+      <ShrimpPiece
+        position={[0, 0, 0]}
+        rotation={[0.4, 0.2, -0.3]}
+        scale={scale}
+      />
+    );
+  }
+
+  if (ingredient.id === "limon") {
+    return (
+      <LimeWedge
+        position={[0, 0, 0]}
+        rotation={[0.2, -0.5, 0.1]}
+        scale={scale * 1.2}
+      />
+    );
+  }
+
+  if (ingredient.id === "pico-gallo") {
+    return <PicoBits />;
+  }
 
   return (
     <group scale={scale}>
@@ -126,7 +364,10 @@ function IngredientModel({
       </mesh>
       <mesh position={[0.08, 0.08, 0.08]} scale={0.55}>
         <IngredientGeometry ingredient={ingredient} />
-        <meshStandardMaterial color={ingredient.accent} roughness={isSauce ? 0.22 : 0.72} />
+        <meshStandardMaterial
+          color={ingredient.accent}
+          roughness={isSauce ? 0.22 : 0.72}
+        />
       </mesh>
       {isPotato
         ? Array.from({ length: 5 }, (_, index) => (
@@ -162,25 +403,59 @@ function IngredientModel({
 
 function Tray() {
   return (
-    <group>
-      <mesh receiveShadow position={[0, 0.16, 0]}>
-        <cylinderGeometry args={[1.72, 1.96, 0.32, 72]} />
-        <meshStandardMaterial color="#11100f" metalness={0.35} roughness={0.32} />
-      </mesh>
-      <mesh receiveShadow position={[0, 0.38, 0]}>
-        <torusGeometry args={[1.72, 0.13, 18, 96]} />
-        <meshStandardMaterial color="#272321" metalness={0.5} roughness={0.26} />
-      </mesh>
-      <mesh receiveShadow position={[0, 0.42, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[1.55, 72]} />
-        <meshStandardMaterial color="#0c0b0a" metalness={0.25} roughness={0.35} />
-      </mesh>
+    <group rotation={[0, 0, 0]}>
+      <RoundedBox
+        args={[3.65, 0.32, 2.32]}
+        radius={0.22}
+        smoothness={8}
+        position={[0, 0.16, 0]}
+        receiveShadow
+        castShadow
+      >
+        <meshStandardMaterial
+          color="#11100f"
+          metalness={0.35}
+          roughness={0.32}
+        />
+      </RoundedBox>
+      <RoundedBox
+        args={[3.95, 0.16, 2.58]}
+        radius={0.26}
+        smoothness={8}
+        position={[0, 0.34, 0]}
+        receiveShadow
+        castShadow
+      >
+        <meshStandardMaterial
+          color="#272321"
+          metalness={0.5}
+          roughness={0.26}
+        />
+      </RoundedBox>
+      <RoundedBox
+        args={[3.42, 0.09, 2.08]}
+        radius={0.2}
+        smoothness={8}
+        position={[0, 0.44, 0]}
+        receiveShadow
+      >
+        <meshStandardMaterial
+          color="#0c0b0a"
+          metalness={0.25}
+          roughness={0.35}
+        />
+      </RoundedBox>
       <mesh position={[0.25, 0.45, 0.15]} rotation={[Math.PI / 2, 0, -0.3]}>
         <ringGeometry args={[0.35, 1.3, 72]} />
-        <meshStandardMaterial transparent color="#ffffff" opacity={0.055} roughness={0.1} />
+        <meshStandardMaterial
+          transparent
+          color="#ffffff"
+          opacity={0.055}
+          roughness={0.1}
+        />
       </mesh>
       <Html center distanceFactor={7} position={[0, 0.9, 0]} transform>
-        <div className="rounded-full border border-amber-200/40 bg-black/65 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-100 shadow-lg backdrop-blur">
+        <div className="rounded-full border border-amber-200/40 bg-black/65 px-3 py-1 text-[10px] font-semibold tracking-[0.18em] text-amber-100 uppercase shadow-lg backdrop-blur">
           Charola
         </div>
       </Html>
@@ -189,29 +464,46 @@ function Tray() {
 }
 
 function PotatoBase() {
-  const potato = getIngredient("papas");
   const basePieces = Array.from({ length: 26 }, (_, index) => {
     const target = ingredientTarget(index);
 
     return {
       key: `base-${index}`,
-      position: [target[0] * 1.9, 0.48 + (index % 6) * 0.035, target[2] * 1.9] as VectorTuple,
-      rotation: [index * 0.4, index * 0.2, index * 0.3] as VectorTuple,
-      scale: 0.72 + (index % 4) * 0.06,
+      position: [
+        target[0] * 2.5,
+        0.56 + (index % 6) * 0.035,
+        target[2] * 2.2,
+      ] as VectorTuple,
+      rotation: [index * 0.33, index * 0.21, index * 0.29] as VectorTuple,
+      scale: [
+        1 + (index % 4) * 0.08,
+        0.58 + (index % 3) * 0.08,
+        0.82 + (index % 5) * 0.055,
+      ] as VectorTuple,
     };
   });
 
   return (
     <group>
       {basePieces.map((piece) => (
-        <group
+        <PotatoPiece
           key={piece.key}
           position={piece.position}
           rotation={piece.rotation}
           scale={piece.scale}
-        >
-          <IngredientModel ingredient={potato} scale={0.72} />
-        </group>
+        />
+      ))}
+      {Array.from({ length: 14 }, (_, index) => (
+        <TortillaChip
+          key={`chip-${index}`}
+          position={[
+            Math.cos(index * 1.1) * 1.25,
+            0.54 + (index % 4) * 0.045,
+            Math.sin(index * 1.1) * 0.78,
+          ]}
+          rotation={[0.15, index * 0.42, 0.25]}
+          scale={0.72 + (index % 4) * 0.06}
+        />
       ))}
     </group>
   );
@@ -237,11 +529,47 @@ function SaucePools() {
           scale: [0.42, 0.06, 0.22] as VectorTuple,
         },
       ].map((pool, index) => (
-        <mesh key={index} position={pool.position} rotation={[Math.PI / 2, 0, index * 0.6]} scale={pool.scale}>
+        <mesh
+          key={index}
+          position={pool.position}
+          rotation={[Math.PI / 2, 0, index * 0.6]}
+          scale={pool.scale}
+        >
           <sphereGeometry args={[1, 32, 16]} />
-          <meshStandardMaterial color={pool.color} metalness={0.02} roughness={0.18} />
+          <meshStandardMaterial
+            color={pool.color}
+            metalness={0.02}
+            roughness={0.12}
+          />
         </mesh>
       ))}
+      <CheeseStrands />
+      <CarneStrip
+        position={[-0.78, 0.93, 0.02]}
+        rotation={[0.15, -0.55, -0.1]}
+        scale={0.95}
+      />
+      <CarneStrip
+        position={[-0.72, 1.03, 0.28]}
+        rotation={[0.2, -0.2, 0.35]}
+        scale={0.75}
+      />
+      <ShrimpPiece
+        position={[0.76, 0.98, -0.12]}
+        rotation={[0.35, 0.8, 0.1]}
+        scale={0.95}
+      />
+      <ShrimpPiece
+        position={[0.92, 0.88, 0.18]}
+        rotation={[0.1, 1.4, -0.18]}
+        scale={0.8}
+      />
+      <PicoBits position={[0.18, 0.96, -0.42]} />
+      <LimeWedge
+        position={[1.18, 0.78, 0.62]}
+        rotation={[0.3, -0.9, 0.1]}
+        scale={0.85}
+      />
     </group>
   );
 }
@@ -274,7 +602,8 @@ function DroppedIngredientMesh({
 
     groupRef.current.position.set(
       THREE.MathUtils.lerp(start[0], target[0], eased),
-      THREE.MathUtils.lerp(start[1], target[1], eased) + Math.sin(progress * Math.PI) * 0.18,
+      THREE.MathUtils.lerp(start[1], target[1], eased) +
+        Math.sin(progress * Math.PI) * 0.18,
       THREE.MathUtils.lerp(start[2], target[2], eased),
     );
     groupRef.current.rotation.set(
@@ -343,14 +672,25 @@ function IngredientToken({
 
 function BuilderScene() {
   const droppedIngredients = useOrderStore((state) => state.droppedIngredients);
-  const visibleIngredients = selectableIngredients.slice(0, shelfPositions.length);
+  const visibleIngredients = selectableIngredients.slice(
+    0,
+    shelfPositions.length,
+  );
 
   return (
     <>
-      <PerspectiveCamera makeDefault fov={45} position={[0, 5.4, 7.2]} />
-      <ambientLight intensity={0.8} />
-      <directionalLight castShadow intensity={2.4} position={[3.5, 6, 4]} />
-      <spotLight angle={0.45} intensity={1.5} penumbra={0.5} position={[-4, 6, -3]} />
+      <color attach="background" args={["#20130d"]} />
+      <fog attach="fog" args={["#20130d", 7, 12]} />
+      <PerspectiveCamera makeDefault fov={38} position={[0, 4.2, 5.25]} />
+      <ambientLight intensity={0.55} />
+      <hemisphereLight args={["#fff1d2", "#2b140d", 1.3]} />
+      <directionalLight castShadow intensity={2.1} position={[3.5, 6, 4]} />
+      <spotLight
+        angle={0.46}
+        intensity={2.4}
+        penumbra={0.55}
+        position={[-3.5, 5.2, 2.6]}
+      />
       <group position={[0, -0.45, 0]}>
         <Tray />
         <PotatoBase />
@@ -372,17 +712,29 @@ function BuilderScene() {
           position={shelfPositions[index]!}
         />
       ))}
-      <mesh receiveShadow position={[0, -0.68, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh
+        receiveShadow
+        position={[0, -0.68, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+      >
         <planeGeometry args={[12, 10]} />
-        <meshStandardMaterial color="#17100d" roughness={0.86} />
+        <meshStandardMaterial color="#20130d" roughness={0.86} />
       </mesh>
-      <ContactShadows blur={2.4} color="#000000" far={8} opacity={0.45} resolution={512} />
-      <Environment preset="warehouse" />
+      <ContactShadows
+        blur={2.4}
+        color="#000000"
+        far={8}
+        opacity={0.45}
+        resolution={512}
+      />
       <OrbitControls
         enablePan={false}
-        enableZoom={false}
+        enableZoom
         maxPolarAngle={Math.PI / 2.15}
-        minPolarAngle={Math.PI / 4}
+        minDistance={4.5}
+        minPolarAngle={Math.PI / 5}
+        maxDistance={8}
+        target={[0, 0.35, 0]}
       />
     </>
   );
@@ -394,12 +746,15 @@ export function PotatoBuilder3D() {
   const uniqueCount = new Set(droppedIngredients.map((item) => item.id)).size;
 
   return (
-    <section className="relative min-h-[520px] overflow-hidden border-y border-border bg-[#211611] sm:min-h-[620px] lg:min-h-[720px]">
-      <div className="absolute left-3 top-3 z-10 flex max-w-[calc(100%-1.5rem)] flex-wrap items-center gap-2">
+    <section className="border-border relative h-[620px] overflow-hidden border-y bg-[#211611] sm:h-[720px] lg:h-[780px]">
+      <div className="absolute top-3 left-3 z-10 flex max-w-[calc(100%-1.5rem)] flex-wrap items-center gap-2">
         <Badge className="bg-amber-300 text-stone-950 hover:bg-amber-300">
           {droppedIngredients.length} ingredientes
         </Badge>
-        <Badge className="border-white/20 bg-black/35 text-white" variant="outline">
+        <Badge
+          className="border-white/20 bg-black/35 text-white"
+          variant="outline"
+        >
           {uniqueCount} unicos
         </Badge>
         <Tooltip>
@@ -418,30 +773,48 @@ export function PotatoBuilder3D() {
         </Tooltip>
       </div>
 
-      <div className="absolute bottom-3 left-3 right-3 z-10 rounded-lg border border-white/10 bg-black/55 p-3 text-xs text-white shadow-2xl backdrop-blur md:left-auto md:max-w-sm">
-        <p className="font-semibold text-amber-100">Toca o arrastra ingredientes.</p>
+      <div className="absolute right-3 bottom-3 left-3 z-10 rounded-lg border border-white/10 bg-black/55 p-3 text-xs text-white shadow-2xl backdrop-blur md:left-auto md:max-w-sm">
+        <p className="font-semibold text-amber-100">
+          Toca o arrastra ingredientes.
+        </p>
         <p className="mt-1 text-white/70">
-          Al soltar, el ingrediente cae a la charola. La camara gira suave para dar profundidad.
+          Al soltar, el ingrediente cae a la charola. La camara gira suave para
+          dar profundidad.
         </p>
       </div>
 
-      <Canvas dpr={[1, 1.7]} gl={{ antialias: true, alpha: false }} shadows>
-        <BuilderScene />
-      </Canvas>
+      <div className="absolute inset-0">
+        <Canvas
+          dpr={[1, 1.7]}
+          gl={{ antialias: true, alpha: false }}
+          onCreated={({ gl }) => {
+            gl.setClearColor("#20130d", 1);
+          }}
+          shadows
+          style={{ background: "#20130d", height: "100%", width: "100%" }}
+        >
+          <BuilderScene />
+        </Canvas>
+      </div>
 
       <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/55 to-transparent" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/55 to-transparent" />
 
-      <div className="absolute right-3 top-3 z-10 hidden rounded-lg border border-white/10 bg-black/45 p-3 text-xs text-white backdrop-blur lg:block">
+      <div className="absolute top-3 right-3 z-10 hidden rounded-lg border border-white/10 bg-black/45 p-3 text-xs text-white backdrop-blur lg:block">
         <div className="mb-2 font-semibold text-amber-100">Categorias</div>
         <div className="grid grid-cols-2 gap-1.5">
           {Object.entries(categoryLabels)
             .filter(([key]) => key !== "drink")
             .map(([key, label]) => {
-              const count = selectableIngredients.filter((item) => item.category === key).length;
+              const count = selectableIngredients.filter(
+                (item) => item.category === key,
+              ).length;
 
               return (
-                <span key={key} className="rounded-md bg-white/10 px-2 py-1 text-white/80">
+                <span
+                  key={key}
+                  className="rounded-md bg-white/10 px-2 py-1 text-white/80"
+                >
                   {label}: {count}
                 </span>
               );
